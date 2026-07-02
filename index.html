@@ -1,0 +1,84 @@
+
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Games Planet Message Generator</title>
+<style>
+body{font-family:Arial;background:#121212;color:#fff;max-width:900px;margin:auto;padding:15px}
+textarea{width:100%;height:230px;background:#222;color:#fff;border:1px solid #555;border-radius:8px;padding:10px}
+input,select,button{padding:10px;margin:6px;border-radius:6px}
+button{background:#2e7d32;color:#fff;border:none}
+#out{white-space:pre-wrap;background:#1d1d1d;padding:12px;border-radius:8px;margin-top:10px}
+</style></head><body>
+<h2>Games Planet Order Message Generator</h2>
+<textarea id="order" placeholder="Paste WhatsApp order..."></textarea><br>
+<select id="mode"><option value="thanks">Thanks</option><option value="dispatch">Dispatch</option></select>
+<select id="courier">
+<option>Delhivery</option>
+<option>DTDC</option>
+<option>Trackon</option>
+<option>Shree Maruti</option>
+<option>Speed Post</option>
+</select>
+<input id="awb" placeholder="AWB">
+<button onclick="gen()">Generate</button>
+<button onclick="copyMsg()">Copy</button>
+<button onclick="wa()">WhatsApp</button>
+<div id="out"></div>
+<script>
+let mob="";
+function g(f,t){let m=t.match(new RegExp(f+":\\s*(.*)","i"));return m?m[1].trim():"";}
+function detectCourier(){
+let t=order.value;
+if(/COD/i.test(t)){courier.value='Delhivery';courier.disabled=true;}
+else{courier.disabled=false;}
+}
+order.addEventListener('input',detectCourier);
+
+function trackLink(c,a){
+if(/delhivery/i.test(c)&&a)return 'https://www.delhivery.com/track/package/'+a;
+if(/dtdc/i.test(c))return 'https://www.dtdc.in';
+if(/trackon/i.test(c))return 'https://trackon.in';
+if(/shree/i.test(c))return 'https://shreemaruti.com';
+if(/speed/i.test(c))return 'https://www.indiapost.gov.in';
+return '';
+}
+
+function gen(){
+let t=order.value;
+let prepaid=/Prepaid/i.test(t),cod=/COD/i.test(t);
+let name=g("Name",t),prod=g("Product",t),varn=g("Variant",t);
+mob=g("Mobile",t).replace(/\D/g,"");
+let paid=g("Amount Paid",t)||g("Advance Paid",t);
+let rest=g("Rest on Delivery",t);
+let eta=(t.match(/Estimated Delivery:\s*(.*)/)||["",""])[1];
+let optional=/optional/i.test(prod+" "+varn);
+let m="";
+if(mode.value=="thanks"){
+m+=`🙏 Thank you for your order, ${name} Ji!\n\n📦 Product: ${prod}\n💾 Variant: ${varn}\n\n`;
+if(prepaid)m+=`💰 Payment Received: ${paid} ✅ (Fully Paid)\n\n`;
+else m+=`💰 Advance Paid: ${paid} ✅\n💵 Balance on Delivery: ${rest}\n\n`;
+m+="Your order is under processing.\n";
+if(eta)m+="🚚 Estimated Delivery: "+eta+"\n\n";
+m+="📌 Important:\n";
+if(prepaid){
+m+=optional?"• Before dispatch: Installation/service charges will be deducted if cancelled.\n":"• Before dispatch: Full payment will be refunded if cancelled.\n";
+m+="• After dispatch: Cancellation, return and refund are not available.";
+}else{
+m+=optional?"• Before dispatch: Installation/service charges will be deducted from advance if cancelled.\n":"• Before dispatch: Full advance will be refunded if cancelled.\n";
+m+="• After dispatch: Advance payment is non-refundable if the shipment is cancelled or refused.";
+}
+}else{
+let c=courier.value.trim(),a=awb.value.trim();
+m+=`📦 Hello ${name} Ji,\n\nYour order has been dispatched successfully. 🎉\n\n📦 Product: ${prod}\n💾 Variant: ${varn}\n\n🚚 Courier: ${c}\n🔢 AWB: ${a}\n`;
+let tl=trackLink(c,a);
+if(tl){m+="🔗 Track Your Order:\n"+tl+"\n";}
+if(cod)m+="\n💵 Balance on Delivery: "+rest+"\n";
+m+="\n📌 Important:\n";
+m+=prepaid?"After dispatch, cancellation, return and refund are not available.":"If the shipment is cancelled or refused after dispatch, the advance payment is non-refundable.";
+}
+out.textContent=m;
+}
+function copyMsg(){navigator.clipboard.writeText(out.textContent);alert("Copied");}
+function wa(){if(!mob){alert("Paste order & generate first");return;}window.open("https://wa.me/91"+mob+"?text="+encodeURIComponent(out.textContent),"_blank");}
+</script>
+</body></html>
